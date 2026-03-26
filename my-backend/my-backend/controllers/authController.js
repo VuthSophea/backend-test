@@ -8,7 +8,7 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     // check user
-    const user = await User.findOne({ email });
+    const user = await User.findByEmail(email);
     if (!user) return res.status(400).json({ msg: "User not found" });
 
     // check password
@@ -17,7 +17,7 @@ exports.login = async (req, res) => {
 
     // create token
     const token = jwt.sign(
-      { id: user._id },
+      { id: user.id },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );

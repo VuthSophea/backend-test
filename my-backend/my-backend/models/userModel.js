@@ -1,16 +1,29 @@
-const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const { pool } = require('../config/db');
 
-const userSchema = new mongoose.Schema({
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true }
-});
+const findByEmail = async (email) => {
+    const [rows] = await pool.query(
+        'SELECT id, email, password FROM users WHERE email = ? LIMIT 1',
+        [email]
+    );
+    return rows[0] || null;
+};
 
-// Hash password before saving
-userSchema.pre('save', async function(next) {
-    if (!this.isModified('password')) return next();
-    this.password = await bcrypt.hash(this.password, 10);
-    next();
-});
+const createUser = async (email, password) => {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const [result] = await pool.query(
+        'INSERT INTO users (email, password) VALUES (?, ?)',
+        [email, hashedPassword]
+    );
 
-module.exports = mongoose.model('User', userSchema);
+    return {
+        id: result.insertId,
+        email,
+        password: hashedPassword,
+    };
+};
+
+module.exports = {
+    findByEmail,
+    createUser,
+};
